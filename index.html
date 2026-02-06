@@ -8,58 +8,28 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     
     <style>
-        :root {
-            --blue: #2563eb;
-            --green: #10b981;
-            --navy: #1e3a8a;
-            --bg: #f8fafc;
-        }
-
+        :root { --blue: #2563eb; --green: #10b981; --navy: #1e3a8a; --bg: #f8fafc; }
         * { box-sizing: border-box; font-family: "Times New Roman", Times, serif; }
         body { margin: 0; background: var(--bg); color: #1e293b; height: 100vh; display: flex; flex-direction: column; }
 
-        /* Tiêu đề */
-        .main-header {
-            background: linear-gradient(135deg, var(--navy), var(--green));
-            color: white; padding: 20px; text-align: center;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
+        .main-header { background: linear-gradient(135deg, var(--navy), var(--green)); color: white; padding: 20px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
         .main-header h1 { margin: 0; font-size: 2rem; letter-spacing: 2px; text-transform: uppercase; }
 
-        /* Tab khoa */
         .nav-container { display: flex; justify-content: center; background: white; padding: 10px; gap: 15px; border-bottom: 2px solid #e2e8f0; }
-        .tab-btn {
-            padding: 10px 35px; cursor: pointer; font-weight: bold; font-size: 1.1rem;
-            border-radius: 10px; border: none; background: #f1f5f9; color: #64748b;
-            transition: 0.3s; box-shadow: inset 2px 2px 5px #d1d9e6;
-        }
-        .tab-btn.active {
-            background: white; color: var(--blue);
-            box-shadow: 4px 4px 10px rgba(0,0,0,0.1);
-            border: 1px solid var(--blue);
-        }
+        .tab-btn { padding: 10px 35px; cursor: pointer; font-weight: bold; font-size: 1.1rem; border-radius: 10px; border: none; background: #f1f5f9; color: #64748b; transition: 0.3s; }
+        .tab-btn.active { background: white; color: var(--blue); box-shadow: 4px 4px 10px rgba(0,0,0,0.1); border: 1px solid var(--blue); }
 
         .container { flex: 1; padding: 15px; max-width: 1500px; margin: auto; width: 100%; display: flex; flex-direction: column; overflow: hidden; }
 
-        /* Filter bar */
         .filter-bar { display: flex; gap: 10px; margin-bottom: 12px; align-items: center; }
-        .filter-item {
-            padding: 6px 18px; background: white; border-radius: 20px;
-            cursor: pointer; font-weight: bold; border: 1px solid #cbd5e1; transition: 0.3s;
-        }
+        .filter-item { padding: 6px 18px; background: white; border-radius: 20px; cursor: pointer; font-weight: bold; border: 1px solid #cbd5e1; transition: 0.3s; }
         .filter-item.active { background: var(--blue); color: white; border-color: var(--blue); }
 
-        /* Toolbar nhập liệu */
-        .toolbar {
-            background: white; padding: 15px; border-radius: 12px;
-            display: flex; gap: 10px; align-items: center; margin-bottom: 15px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-left: 5px solid var(--green);
-        }
+        .toolbar { background: white; padding: 15px; border-radius: 12px; display: flex; gap: 10px; align-items: center; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-left: 5px solid var(--green); }
         input, select { padding: 10px; border: 1px solid #e2e8f0; border-radius: 6px; outline: none; font-size: 1rem; }
         .btn-add { background: var(--green); color: white; border: none; border-radius: 6px; padding: 10px 20px; cursor: pointer; font-weight: bold; }
         .btn-excel { background: #f59e0b; color: white; border: none; border-radius: 6px; padding: 10px 20px; cursor: pointer; font-weight: bold; margin-left: auto; }
 
-        /* Bảng hiển thị */
         .table-box { background: white; border-radius: 12px; flex: 1; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 10px 15px rgba(0,0,0,0.05); }
         .scroll { overflow-y: auto; flex: 1; padding: 0 10px; }
         table { width: 100%; border-collapse: separate; border-spacing: 0 8px; }
@@ -70,14 +40,8 @@
         tbody td:first-child { border-left: 1px solid #f1f5f9; border-radius: 10px 0 0 10px; }
         tbody td:last-child { border-right: 1px solid #f1f5f9; border-radius: 0 10px 10px 0; }
 
-        /* Hiệu ứng khối */
         tbody tr:hover { transform: scale(1.005); }
-        tbody tr:hover td {
-            background: #f0fdf4;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-            color: #166534;
-            border-color: var(--green);
-        }
+        tbody tr:hover td { background: #f0fdf4; box-shadow: 0 4px 12px rgba(0,0,0,0.08); color: #166534; border-color: var(--green); }
 
         .tag { padding: 3px 10px; border-radius: 5px; color: white; font-weight: bold; font-size: 0.85rem; }
         .tag-t1 { background: var(--blue); }
@@ -172,11 +136,14 @@
                     dataArr.push({ id, ...data[id] });
                 });
 
-                // TỰ ĐỘNG SẮP XẾP TẦNG 1 LÊN TRƯỚC
+                // SẮP XẾP TRIỆT ĐỂ: 
+                // 1. Tầng 1 lên trước Tầng 3.
+                // 2. Trong cùng tầng, máy mới nhập (id lớn hơn) nằm trên.
                 dataArr.sort((a, b) => {
-                    if (a.floor === 'Tầng 1' && b.floor !== 'Tầng 1') return -1;
-                    if (a.floor !== 'Tầng 1' && b.floor === 'Tầng 1') return 1;
-                    return 0;
+                    if (a.floor !== b.floor) {
+                        return a.floor === 'Tầng 1' ? -1 : 1;
+                    }
+                    return b.id.localeCompare(a.id); // Sắp xếp theo ID Firebase (thời gian)
                 });
 
                 dataArr.forEach(item => {
@@ -225,12 +192,10 @@
     function exportData() {
         const table = document.getElementById("upsTable");
         const rows = Array.from(table.rows).filter(r => r.style.display !== 'none');
-        
         const ws_data = rows.map(r => Array.from(r.cells).slice(0, 4).map(c => c.innerText));
         const wb = XLSX.utils.book_new();
         const ws = XLSX.utils.aoa_to_sheet(ws_data);
         XLSX.utils.book_append_sheet(wb, ws, "Dữ liệu");
-        
         const fileName = currentFilter === 'all' ? `UPS_TatCa_${currentDept}.xlsx` : `UPS_${currentFilter}_${currentDept}.xlsx`;
         XLSX.writeFile(wb, fileName);
     }
