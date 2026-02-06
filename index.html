@@ -2,136 +2,105 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>QUẢN LÝ UPS - KHOA XN & GPB</title>
+    <title>HỆ THỐNG QUẢN LÝ UPS - KHOA XN & GPB</title>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     
     <style>
         :root {
-            --primary-gradient: linear-gradient(135deg, #1e3a8a, #10b981); /* Blue to Green */
-            --bg-body: #f1f5f9;
-            --white: #ffffff;
-            --text-dark: #1e293b;
+            --blue: #2563eb;
+            --green: #10b981;
+            --navy: #1e3a8a;
+            --bg: #f8fafc;
         }
 
         * { box-sizing: border-box; font-family: "Times New Roman", Times, serif; }
-        body { margin: 0; background: var(--bg-body); color: var(--text-dark); height: 100vh; display: flex; flex-direction: column; }
+        body { margin: 0; background: var(--bg); color: #1e293b; height: 100vh; display: flex; flex-direction: column; }
 
-        /* Tiêu đề chính rực rỡ */
-        .header-banner {
-            background: var(--primary-gradient);
-            padding: 25px;
-            text-align: center;
-            color: white;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        /* Tiêu đề */
+        .main-header {
+            background: linear-gradient(135deg, var(--navy), var(--green));
+            color: white; padding: 20px; text-align: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
-        .header-banner h1 { 
-            margin: 0; font-size: 2.2rem; text-transform: uppercase; 
-            letter-spacing: 3px; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-        }
+        .main-header h1 { margin: 0; font-size: 2rem; letter-spacing: 2px; text-transform: uppercase; }
 
-        /* Thanh điều hướng Khoa */
-        .dept-nav {
-            display: flex; background: white; justify-content: center; gap: 5px; padding: 5px;
+        /* Tab khoa */
+        .nav-container { display: flex; justify-content: center; background: white; padding: 10px; gap: 15px; border-bottom: 2px solid #e2e8f0; }
+        .tab-btn {
+            padding: 10px 35px; cursor: pointer; font-weight: bold; font-size: 1.1rem;
+            border-radius: 10px; border: none; background: #f1f5f9; color: #64748b;
+            transition: 0.3s; box-shadow: inset 2px 2px 5px #d1d9e6;
         }
-        .dept-tab {
-            padding: 12px 50px; cursor: pointer; font-weight: bold; font-size: 1.2rem;
-            border-radius: 8px; transition: 0.4s; color: #64748b;
-        }
-        .dept-tab.active {
-            background: var(--primary-gradient); color: white;
-            box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
+        .tab-btn.active {
+            background: white; color: var(--blue);
+            box-shadow: 4px 4px 10px rgba(0,0,0,0.1);
+            border: 1px solid var(--blue);
         }
 
-        .container { flex: 1; padding: 20px; max-width: 1500px; margin: auto; width: 100%; display: flex; flex-direction: column; }
+        .container { flex: 1; padding: 15px; max-width: 1500px; margin: auto; width: 100%; display: flex; flex-direction: column; overflow: hidden; }
 
-        /* Toolbar nhập liệu nổi khối */
+        /* Filter bar */
+        .filter-bar { display: flex; gap: 10px; margin-bottom: 12px; align-items: center; }
+        .filter-item {
+            padding: 6px 18px; background: white; border-radius: 20px;
+            cursor: pointer; font-weight: bold; border: 1px solid #cbd5e1; transition: 0.3s;
+        }
+        .filter-item.active { background: var(--blue); color: white; border-color: var(--blue); }
+
+        /* Toolbar nhập liệu */
         .toolbar {
-            background: white; padding: 18px; border-radius: 15px;
-            display: flex; gap: 12px; align-items: center; margin-bottom: 20px;
-            box-shadow: 5px 5px 15px #d1d9e6, -5px -5px 15px #ffffff;
+            background: white; padding: 15px; border-radius: 12px;
+            display: flex; gap: 10px; align-items: center; margin-bottom: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-left: 5px solid var(--green);
         }
-        input, select {
-            padding: 10px 15px; border: 1px solid #e2e8f0; border-radius: 8px;
-            outline: none; font-size: 1rem; background: #f8fafc; transition: 0.3s;
-        }
-        input:focus { border-color: #10b981; box-shadow: 0 0 8px rgba(16, 185, 129, 0.2); }
+        input, select { padding: 10px; border: 1px solid #e2e8f0; border-radius: 6px; outline: none; font-size: 1rem; }
+        .btn-add { background: var(--green); color: white; border: none; border-radius: 6px; padding: 10px 20px; cursor: pointer; font-weight: bold; }
+        .btn-excel { background: #f59e0b; color: white; border: none; border-radius: 6px; padding: 10px 20px; cursor: pointer; font-weight: bold; margin-left: auto; }
 
-        .btn {
-            padding: 10px 25px; border: none; border-radius: 8px;
-            cursor: pointer; font-weight: bold; transition: 0.3s;
-        }
-        .btn-add { background: #10b981; color: white; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.4); }
-        .btn-add:hover { background: #059669; transform: scale(1.05); }
+        /* Bảng hiển thị */
+        .table-box { background: white; border-radius: 12px; flex: 1; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 10px 15px rgba(0,0,0,0.05); }
+        .scroll { overflow-y: auto; flex: 1; padding: 0 10px; }
+        table { width: 100%; border-collapse: separate; border-spacing: 0 8px; }
+        thead th { position: sticky; top: 0; background: #f8fafc; padding: 15px; text-align: left; z-index: 10; color: var(--navy); border-bottom: 2px solid #e2e8f0; }
         
-        .btn-excel { background: #3b82f6; color: white; margin-left: auto; box-shadow: 0 4px 10px rgba(59, 130, 246, 0.4); }
-        .btn-excel:hover { background: #2563eb; transform: scale(1.05); }
+        tbody tr { transition: 0.3s; }
+        tbody td { background: white; padding: 12px 15px; border-top: 1px solid #f1f5f9; border-bottom: 1px solid #f1f5f9; font-size: 1.1rem; }
+        tbody td:first-child { border-left: 1px solid #f1f5f9; border-radius: 10px 0 0 10px; }
+        tbody td:last-child { border-right: 1px solid #f1f5f9; border-radius: 0 10px 10px 0; }
 
-        /* Bảng dữ liệu */
-        .table-container {
-            background: white; border-radius: 15px; flex: 1; overflow: hidden;
-            box-shadow: 8px 8px 20px #d1d9e6, -8px -8px 20px #ffffff;
-            display: flex; flex-direction: column;
-        }
-        .scroll-box { overflow-y: auto; flex: 1; padding: 10px; }
-        table { width: 100%; border-collapse: separate; border-spacing: 0 10px; }
-        thead th { 
-            position: sticky; top: 0; background: #f1f5f9; padding: 15px; 
-            text-align: left; color: #475569; z-index: 10; font-size: 1.1rem;
-        }
-        
-        /* Hiệu ứng Khối di động trên dòng */
-        tbody tr { transition: all 0.3s ease; }
-        tbody td { 
-            background: white; padding: 15px; 
-            border-top: 1px solid #f1f5f9; border-bottom: 1px solid #f1f5f9; 
-            font-size: 1.15rem;
-        }
-        tbody td:first-child { border-left: 1px solid #f1f5f9; border-radius: 12px 0 0 12px; }
-        tbody td:last-child { border-right: 1px solid #f1f5f9; border-radius: 0 12px 12px 0; }
-
-        tbody tr:hover {
-            transform: translateY(-4px) scale(1.01);
-        }
+        /* Hiệu ứng khối */
+        tbody tr:hover { transform: scale(1.005); }
         tbody tr:hover td {
-            background: #ecfdf5; /* Xanh lá cực nhạt */
-            border-color: #10b981;
-            box-shadow: 0 6px 15px rgba(0,0,0,0.05);
-            color: #047857;
+            background: #f0fdf4;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            color: #166534;
+            border-color: var(--green);
         }
 
-        /* Nhãn Tầng */
-        .tag { padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 0.85rem; color: white; }
-        .tag-t1 { background: #3b82f6; } /* Blue */
-        .tag-t3 { background: #10b981; } /* Green */
-        
-        .btn-del { color: #f87171; border: none; background: none; cursor: pointer; font-weight: bold; font-size: 1.2rem; }
-        tr:hover .btn-del { color: #dc2626; }
-
-        /* Tabs lọc */
-        .filter-area { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; }
-        .f-tab { padding: 6px 20px; background: white; border-radius: 20px; border: 1.5px solid #cbd5e1; cursor: pointer; font-weight: bold; transition: 0.3s; }
-        .f-tab.active { background: #1e3a8a; color: white; border-color: #1e3a8a; }
-
+        .tag { padding: 3px 10px; border-radius: 5px; color: white; font-weight: bold; font-size: 0.85rem; }
+        .tag-t1 { background: var(--blue); }
+        .tag-t3 { background: var(--green); }
+        .btn-del { color: #ef4444; border: none; background: none; cursor: pointer; font-weight: bold; }
     </style>
 </head>
 <body>
 
-<div class="header-banner">
-    <h1>THỐNG KÊ HỆ THỐNG UPS</h1>
+<div class="main-header">
+    <h1>THỐNG KÊ HỆ THỐNG UPS BỆNH VIỆN</h1>
 </div>
 
-<div class="dept-nav">
-    <div class="dept-tab active" onclick="switchDept('Xét Nghiệm', this)">KHOA XÉT NGHIỆM</div>
-    <div class="dept-tab" onclick="switchDept('Giải Phẫu Bệnh', this)">KHOA GIẢI PHẪU BỆNH</div>
+<div class="nav-container">
+    <button class="tab-btn active" onclick="switchDept('Xét Nghiệm', this)">KHOA XÉT NGHIỆM</button>
+    <button class="tab-btn" onclick="switchDept('Giải Phẫu Bệnh', this)">KHOA GIẢI PHẪU BỆNH</button>
 </div>
 
 <div class="container">
-    <div class="filter-area">
-        <div id="fAll" class="f-tab active" onclick="filter('all', this)">Tất cả máy</div>
-        <div id="fT1" class="f-tab" onclick="filter('Tầng 1', this)">Tầng 1</div>
-        <div id="fT3" class="f-tab" onclick="filter('Tầng 3', this)">Tầng 3</div>
+    <div class="filter-bar">
+        <div id="btn-all" class="filter-item active" onclick="setFilter('all', this)">Tất cả máy</div>
+        <div id="btn-t1" class="filter-item" onclick="setFilter('Tầng 1', this)">Tầng 1</div>
+        <div id="btn-t3" class="filter-item" onclick="setFilter('Tầng 3', this)">Tầng 3</div>
     </div>
 
     <div class="toolbar">
@@ -139,22 +108,22 @@
             <option value="Tầng 1">Tầng 1</option>
             <option value="Tầng 3">Tầng 3</option>
         </select>
-        <input type="text" id="dev" placeholder="Tên máy xét nghiệm..." style="flex:2">
+        <input type="text" id="dev" placeholder="Tên thiết bị..." style="flex:2">
         <input type="text" id="model" placeholder="Model UPS..." style="flex:1">
-        <input type="text" id="sn" placeholder="Số Seri (S/N)..." style="flex:1">
-        <button class="btn btn-add" onclick="pushData()">+ THÊM MÁY</button>
-        <button class="btn btn-excel" onclick="exportToExcel()">📊 XUẤT EXCEL</button>
+        <input type="text" id="sn" placeholder="Số Serial UPS..." style="flex:1">
+        <button class="btn-add" onclick="saveData()">+ THÊM MỚI</button>
+        <button class="btn-excel" onclick="exportData()">📊 XUẤT EXCEL</button>
     </div>
 
-    <div class="table-container">
-        <div class="scroll-box">
+    <div class="table-box">
+        <div class="scroll">
             <table id="upsTable">
                 <thead>
                     <tr>
-                        <th width="110px">Vị trí</th>
-                        <th>Tên Máy Xét Nghiệm / Thiết Bị</th>
-                        <th width="280px">Model UPS</th>
-                        <th width="280px">Số Serial (S/N)</th>
+                        <th width="100px">Vị trí</th>
+                        <th>Tên Máy Thiết Bị</th>
+                        <th width="250px">Model UPS</th>
+                        <th width="250px">Số Serial UPS</th>
                         <th width="50px"></th>
                     </tr>
                 </thead>
@@ -166,26 +135,27 @@
 
 <script>
     let currentDept = 'Xét Nghiệm';
+    let currentFilter = 'all';
     const config = { databaseURL: "https://hautruong3339-c2db4-default-rtdb.firebaseio.com/" };
     firebase.initializeApp(config);
     const db = firebase.database().ref("ups_system");
 
     function switchDept(dept, btn) {
         currentDept = dept;
-        document.querySelectorAll('.dept-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         
-        const fT1 = document.getElementById('fT1');
+        const btnT1 = document.getElementById('btn-t1');
         const floorSel = document.getElementById('floor');
         
         if(dept === 'Giải Phẫu Bệnh') {
-            fT1.style.display = 'none';
+            btnT1.style.display = 'none';
             floorSel.innerHTML = '<option value="Tầng 3">Tầng 3</option>';
-            filter('Tầng 3', document.getElementById('fT3'));
+            setFilter('Tầng 3', document.getElementById('btn-t3'));
         } else {
-            fT1.style.display = 'block';
+            btnT1.style.display = 'block';
             floorSel.innerHTML = '<option value="Tầng 1">Tầng 1</option><option value="Tầng 3">Tầng 3</option>';
-            filter('all', document.getElementById('fAll'));
+            setFilter('all', document.getElementById('btn-all'));
         }
         load();
     }
@@ -194,26 +164,52 @@
         db.child(currentDept).on('value', snap => {
             const tbody = document.getElementById('tbody');
             tbody.innerHTML = "";
+            let dataArr = [];
             const data = snap.val();
+            
             if(data) {
                 Object.keys(data).forEach(id => {
-                    const item = data[id];
+                    dataArr.push({ id, ...data[id] });
+                });
+
+                // TỰ ĐỘNG SẮP XẾP TẦNG 1 LÊN TRƯỚC
+                dataArr.sort((a, b) => {
+                    if (a.floor === 'Tầng 1' && b.floor !== 'Tầng 1') return -1;
+                    if (a.floor !== 'Tầng 1' && b.floor === 'Tầng 1') return 1;
+                    return 0;
+                });
+
+                dataArr.forEach(item => {
                     const row = document.createElement('tr');
                     row.setAttribute('data-floor', item.floor);
                     row.innerHTML = `
                         <td><span class="tag ${item.floor === 'Tầng 1' ? 'tag-t1' : 'tag-t3'}">${item.floor}</span></td>
-                        <td contenteditable="true" onblur="update('${id}','dev',this.innerText)">${item.dev}</td>
-                        <td contenteditable="true" onblur="update('${id}','model',this.innerText)">${item.model}</td>
-                        <td contenteditable="true" onblur="update('${id}','sn',this.innerText)">${item.sn}</td>
-                        <td><button class="btn-del" onclick="remove('${id}')">✕</button></td>
+                        <td contenteditable="true" onblur="update('${item.id}','dev',this.innerText)">${item.dev}</td>
+                        <td contenteditable="true" onblur="update('${item.id}','model',this.innerText)">${item.model}</td>
+                        <td contenteditable="true" onblur="update('${item.id}','sn',this.innerText)">${item.sn}</td>
+                        <td><button class="btn-del" onclick="remove('${item.id}')">✕</button></td>
                     `;
                     tbody.appendChild(row);
                 });
             }
+            applyFilter();
         });
     }
 
-    function pushData() {
+    function setFilter(val, btn) {
+        currentFilter = val;
+        document.querySelectorAll('.filter-item').forEach(i => i.classList.remove('active'));
+        btn.classList.add('active');
+        applyFilter();
+    }
+
+    function applyFilter() {
+        document.querySelectorAll('#tbody tr').forEach(r => {
+            r.style.display = (currentFilter === 'all' || r.getAttribute('data-floor') === currentFilter) ? '' : 'none';
+        });
+    }
+
+    function saveData() {
         const floor = document.getElementById('floor').value;
         const dev = document.getElementById('dev').value;
         const model = document.getElementById('model').value;
@@ -226,21 +222,17 @@
     function update(id, field, val) { db.child(currentDept).child(id).update({ [field]: val }); }
     function remove(id) { if(confirm("Xóa máy này?")) db.child(currentDept).child(id).remove(); }
 
-    function filter(val, btn) {
-        document.querySelectorAll('.f-tab').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        document.querySelectorAll('#tbody tr').forEach(r => {
-            r.style.display = (val === 'all' || r.getAttribute('data-floor') === val) ? '' : 'none';
-        });
-    }
-
-    function exportToExcel() {
-        const rows = Array.from(document.getElementById("upsTable").rows).filter(r => r.style.display !== 'none');
+    function exportData() {
+        const table = document.getElementById("upsTable");
+        const rows = Array.from(table.rows).filter(r => r.style.display !== 'none');
+        
         const ws_data = rows.map(r => Array.from(r.cells).slice(0, 4).map(c => c.innerText));
         const wb = XLSX.utils.book_new();
         const ws = XLSX.utils.aoa_to_sheet(ws_data);
-        XLSX.utils.book_append_sheet(wb, ws, "Thống kê UPS");
-        XLSX.writeFile(wb, `UPS_${currentDept}.xlsx`);
+        XLSX.utils.book_append_sheet(wb, ws, "Dữ liệu");
+        
+        const fileName = currentFilter === 'all' ? `UPS_TatCa_${currentDept}.xlsx` : `UPS_${currentFilter}_${currentDept}.xlsx`;
+        XLSX.writeFile(wb, fileName);
     }
 
     load();
