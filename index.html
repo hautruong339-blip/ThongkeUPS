@@ -2,72 +2,112 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>HỆ THỐNG QUẢN LÝ UPS - KHOA XN & GPB</title>
+    <title>QUẢN LÝ UPS BỆNH VIỆN - BẢO MẬT CAO</title>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     
     <style>
-        :root { --blue: #2563eb; --green: #10b981; --navy: #1e3a8a; --bg: #f8fafc; }
+        :root {
+            --primary: #1e3a8a; --green: #10b981; --bg: #f1f5f9;
+        }
         * { box-sizing: border-box; font-family: "Times New Roman", Times, serif; }
         body { margin: 0; background: var(--bg); color: #1e293b; height: 100vh; display: flex; flex-direction: column; }
 
-        .main-header { background: linear-gradient(135deg, var(--navy), var(--green)); color: white; padding: 20px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        .main-header h1 { margin: 0; font-size: 2rem; letter-spacing: 2px; text-transform: uppercase; }
+        /* Header */
+        .header-banner {
+            background: linear-gradient(135deg, var(--primary), var(--green));
+            padding: 20px; text-align: center; color: white; position: relative;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .header-banner h1 { margin: 0; font-size: 1.8rem; text-transform: uppercase; letter-spacing: 2px; }
+        
+        #btnLockToggle {
+            position: absolute; right: 20px; top: 50%; transform: translateY(-50%);
+            padding: 8px 15px; background: rgba(255,255,255,0.2); border: 1px solid white;
+            color: white; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.3s;
+        }
+        #btnLockToggle:hover { background: white; color: var(--primary); }
 
-        .nav-container { display: flex; justify-content: center; background: white; padding: 10px; gap: 15px; border-bottom: 2px solid #e2e8f0; }
-        .tab-btn { padding: 10px 35px; cursor: pointer; font-weight: bold; font-size: 1.1rem; border-radius: 10px; border: none; background: #f1f5f9; color: #64748b; transition: 0.3s; }
-        .tab-btn.active { background: white; color: var(--blue); box-shadow: 4px 4px 10px rgba(0,0,0,0.1); border: 1px solid var(--blue); }
+        /* Modal nhập mật khẩu */
+        #authModal {
+            display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.5); backdrop-filter: blur(5px);
+        }
+        .modal-content {
+            background: white; margin: 15% auto; padding: 25px; border-radius: 15px;
+            width: 320px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+        .modal-content h3 { margin-top: 0; color: var(--primary); }
+        .modal-content input { width: 100%; padding: 10px; margin: 15px 0; border: 1px solid #ddd; border-radius: 8px; text-align: center; }
+        .modal-btns { display: flex; gap: 10px; }
+        .modal-btns button { flex: 1; padding: 10px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        .btn-confirm { background: var(--green); color: white; }
+        .btn-cancel { background: #e2e8f0; color: #64748b; }
+
+        /* Navigation */
+        .dept-nav { display: flex; background: white; justify-content: center; border-bottom: 2px solid #e2e8f0; }
+        .dept-tab { padding: 12px 40px; cursor: pointer; font-weight: bold; font-size: 1.1rem; color: #64748b; transition: 0.3s; }
+        .dept-tab.active { color: var(--primary); border-bottom: 3px solid var(--primary); background: #f8fafc; }
 
         .container { flex: 1; padding: 15px; max-width: 1500px; margin: auto; width: 100%; display: flex; flex-direction: column; overflow: hidden; }
 
-        .filter-bar { display: flex; gap: 10px; margin-bottom: 12px; align-items: center; }
-        .filter-item { padding: 6px 18px; background: white; border-radius: 20px; cursor: pointer; font-weight: bold; border: 1px solid #cbd5e1; transition: 0.3s; }
-        .filter-item.active { background: var(--blue); color: white; border-color: var(--blue); }
+        /* Toolbar */
+        #toolbar {
+            background: white; padding: 15px; border-radius: 12px;
+            display: none; gap: 10px; align-items: center; margin-bottom: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-left: 5px solid var(--green);
+        }
+        input, select { padding: 8px; border: 1px solid #e2e8f0; border-radius: 6px; outline: none; }
+        .btn-add { background: var(--green); color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        .btn-excel { background: #f59e0b; color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-left: auto; }
 
-        .toolbar { background: white; padding: 15px; border-radius: 12px; display: flex; gap: 10px; align-items: center; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-left: 5px solid var(--green); }
-        input, select { padding: 10px; border: 1px solid #e2e8f0; border-radius: 6px; outline: none; font-size: 1rem; }
-        .btn-add { background: var(--green); color: white; border: none; border-radius: 6px; padding: 10px 20px; cursor: pointer; font-weight: bold; }
-        .btn-excel { background: #f59e0b; color: white; border: none; border-radius: 6px; padding: 10px 20px; cursor: pointer; font-weight: bold; margin-left: auto; }
-
-        .table-box { background: white; border-radius: 12px; flex: 1; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 10px 15px rgba(0,0,0,0.05); }
+        /* Table */
+        .table-box { background: white; border-radius: 12px; flex: 1; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
         .scroll { overflow-y: auto; flex: 1; padding: 0 10px; }
         table { width: 100%; border-collapse: separate; border-spacing: 0 8px; }
-        thead th { position: sticky; top: 0; background: #f8fafc; padding: 15px; text-align: left; z-index: 10; color: var(--navy); border-bottom: 2px solid #e2e8f0; }
+        thead th { position: sticky; top: 0; background: #f8fafc; padding: 12px; text-align: left; z-index: 10; color: var(--primary); border-bottom: 2px solid #e2e8f0; }
         
         tbody tr { transition: 0.3s; }
-        tbody td { background: white; padding: 12px 15px; border-top: 1px solid #f1f5f9; border-bottom: 1px solid #f1f5f9; font-size: 1.1rem; }
-        tbody td:first-child { border-left: 1px solid #f1f5f9; border-radius: 10px 0 0 10px; }
-        tbody td:last-child { border-right: 1px solid #f1f5f9; border-radius: 0 10px 10px 0; }
+        tbody td { background: white; padding: 10px 15px; border-top: 1px solid #f1f5f9; border-bottom: 1px solid #f1f5f9; font-size: 1.1rem; }
+        tbody tr:hover { transform: translateY(-2px); }
+        tbody tr:hover td { background: #f0fdf4; box-shadow: 0 4px 8px rgba(0,0,0,0.05); }
 
-        tbody tr:hover { transform: scale(1.005); }
-        tbody tr:hover td { background: #f0fdf4; box-shadow: 0 4px 12px rgba(0,0,0,0.08); color: #166534; border-color: var(--green); }
-
-        .tag { padding: 3px 10px; border-radius: 5px; color: white; font-weight: bold; font-size: 0.85rem; }
-        .tag-t1 { background: var(--blue); }
-        .tag-t3 { background: var(--green); }
+        .tag { padding: 3px 8px; border-radius: 4px; color: white; font-weight: bold; font-size: 0.8rem; }
+        .tag-t1 { background: #3b82f6; }
+        .tag-t3 { background: #10b981; }
+        
+        .col-del { display: none; }
         .btn-del { color: #ef4444; border: none; background: none; cursor: pointer; font-weight: bold; }
+        .unlocked { border: 1px dashed var(--green) !important; background: #fafdfb !important; }
+
     </style>
 </head>
 <body>
 
-<div class="main-header">
-    <h1>THỐNG KÊ HỆ THỐNG UPS BỆNH VIỆN</h1>
+<div id="authModal">
+    <div class="modal-content">
+        <h3>XÁC THỰC QUẢN TRỊ</h3>
+        <input type="password" id="passInput" placeholder="Nhập mật khẩu...">
+        <div class="modal-btns">
+            <button class="btn-cancel" onclick="closeModal()">HỦY</button>
+            <button class="btn-confirm" onclick="checkAuth()">XÁC NHẬN</button>
+        </div>
+    </div>
 </div>
 
-<div class="nav-container">
-    <button class="tab-btn active" onclick="switchDept('Xét Nghiệm', this)">KHOA XÉT NGHIỆM</button>
-    <button class="tab-btn" onclick="switchDept('Giải Phẫu Bệnh', this)">KHOA GIẢI PHẪU BỆNH</button>
+<div class="header-banner">
+    <h1>THỐNG KÊ HỆ THỐNG UPS</h1>
+    <button id="btnLockToggle" onclick="openModal()">🔓 MỞ KHÓA</button>
+</div>
+
+<div class="dept-nav">
+    <div class="dept-tab active" onclick="switchDept('Xét Nghiệm', this)">KHOA XÉT NGHIỆM</div>
+    <div class="dept-tab" onclick="switchDept('Giải Phẫu Bệnh', this)">KHOA GIẢI PHẪU BỆNH</div>
 </div>
 
 <div class="container">
-    <div class="filter-bar">
-        <div id="btn-all" class="filter-item active" onclick="setFilter('all', this)">Tất cả máy</div>
-        <div id="btn-t1" class="filter-item" onclick="setFilter('Tầng 1', this)">Tầng 1</div>
-        <div id="btn-t3" class="filter-item" onclick="setFilter('Tầng 3', this)">Tầng 3</div>
-    </div>
-
-    <div class="toolbar">
+    <div id="toolbar">
         <select id="floor">
             <option value="Tầng 1">Tầng 1</option>
             <option value="Tầng 3">Tầng 3</option>
@@ -75,8 +115,8 @@
         <input type="text" id="dev" placeholder="Tên thiết bị..." style="flex:2">
         <input type="text" id="model" placeholder="Model UPS..." style="flex:1">
         <input type="text" id="sn" placeholder="Số Serial UPS..." style="flex:1">
-        <button class="btn-add" onclick="saveData()">+ THÊM MỚI</button>
-        <button class="btn-excel" onclick="exportData()">📊 XUẤT EXCEL</button>
+        <button class="btn-add" onclick="saveData()">+ THÊM</button>
+        <button class="btn-excel" onclick="exportData()">📊 EXCEL</button>
     </div>
 
     <div class="table-box">
@@ -86,9 +126,9 @@
                     <tr>
                         <th width="100px">Vị trí</th>
                         <th>Tên Máy Thiết Bị</th>
-                        <th width="250px">Model UPS</th>
-                        <th width="250px">Số Serial UPS</th>
-                        <th width="50px"></th>
+                        <th width="200px">Model UPS</th>
+                        <th width="200px">Số Serial UPS</th>
+                        <th class="col-del" width="50px">Xóa</th>
                     </tr>
                 </thead>
                 <tbody id="tbody"></tbody>
@@ -99,27 +139,56 @@
 
 <script>
     let currentDept = 'Xét Nghiệm';
-    let currentFilter = 'all';
+    let isUnlocked = false;
     const config = { databaseURL: "https://hautruong3339-c2db4-default-rtdb.firebaseio.com/" };
     firebase.initializeApp(config);
     const db = firebase.database().ref("ups_system");
 
+    // Modal logic
+    function openModal() {
+        if (isUnlocked) {
+            location.reload(); // Khóa lại bằng cách load trang
+        } else {
+            document.getElementById('authModal').style.display = "block";
+            document.getElementById('passInput').focus();
+        }
+    }
+
+    function closeModal() {
+        document.getElementById('authModal').style.display = "none";
+        document.getElementById('passInput').value = "";
+    }
+
+    function checkAuth() {
+        const pass = document.getElementById('passInput').value;
+        if (pass === "vt123") {
+            isUnlocked = true;
+            document.getElementById('btnLockToggle').innerText = "🔒 KHÓA LẠI";
+            document.getElementById('btnLockToggle').style.background = "#ef4444";
+            document.getElementById('toolbar').style.display = "flex";
+            document.querySelectorAll('.col-del').forEach(el => el.style.display = "table-cell");
+            closeModal();
+            load();
+        } else {
+            alert("Mật khẩu không chính xác!");
+            document.getElementById('passInput').value = "";
+        }
+    }
+
+    // Enter key to confirm
+    document.getElementById('passInput').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') checkAuth();
+    });
+
     function switchDept(dept, btn) {
         currentDept = dept;
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.dept-tab').forEach(t => t.classList.remove('active'));
         btn.classList.add('active');
-        
-        const btnT1 = document.getElementById('btn-t1');
         const floorSel = document.getElementById('floor');
-        
         if(dept === 'Giải Phẫu Bệnh') {
-            btnT1.style.display = 'none';
             floorSel.innerHTML = '<option value="Tầng 3">Tầng 3</option>';
-            setFilter('Tầng 3', document.getElementById('btn-t3'));
         } else {
-            btnT1.style.display = 'block';
             floorSel.innerHTML = '<option value="Tầng 1">Tầng 1</option><option value="Tầng 3">Tầng 3</option>';
-            setFilter('all', document.getElementById('btn-all'));
         }
         load();
     }
@@ -130,49 +199,27 @@
             tbody.innerHTML = "";
             let dataArr = [];
             const data = snap.val();
-            
             if(data) {
-                Object.keys(data).forEach(id => {
-                    dataArr.push({ id, ...data[id] });
-                });
-
-                // SẮP XẾP TRIỆT ĐỂ: 
-                // 1. Tầng 1 lên trước Tầng 3.
-                // 2. Trong cùng tầng, máy mới nhập (id lớn hơn) nằm trên.
+                Object.keys(data).forEach(id => dataArr.push({ id, ...data[id] }));
                 dataArr.sort((a, b) => {
-                    if (a.floor !== b.floor) {
-                        return a.floor === 'Tầng 1' ? -1 : 1;
-                    }
-                    return b.id.localeCompare(a.id); // Sắp xếp theo ID Firebase (thời gian)
+                    if (a.floor !== b.floor) return a.floor === 'Tầng 1' ? -1 : 1;
+                    return b.id.localeCompare(a.id);
                 });
 
                 dataArr.forEach(item => {
                     const row = document.createElement('tr');
-                    row.setAttribute('data-floor', item.floor);
                     row.innerHTML = `
                         <td><span class="tag ${item.floor === 'Tầng 1' ? 'tag-t1' : 'tag-t3'}">${item.floor}</span></td>
-                        <td contenteditable="true" onblur="update('${item.id}','dev',this.innerText)">${item.dev}</td>
-                        <td contenteditable="true" onblur="update('${item.id}','model',this.innerText)">${item.model}</td>
-                        <td contenteditable="true" onblur="update('${item.id}','sn',this.innerText)">${item.sn}</td>
-                        <td><button class="btn-del" onclick="remove('${item.id}')">✕</button></td>
+                        <td class="${isUnlocked ? 'unlocked' : ''}" contenteditable="${isUnlocked}" onblur="update('${item.id}','dev',this.innerText)">${item.dev}</td>
+                        <td class="${isUnlocked ? 'unlocked' : ''}" contenteditable="${isUnlocked}" onblur="update('${item.id}','model',this.innerText)">${item.model}</td>
+                        <td class="${isUnlocked ? 'unlocked' : ''}" contenteditable="${isUnlocked}" onblur="update('${item.id}','sn',this.innerText)">${item.sn}</td>
+                        <td class="col-del" style="display:${isUnlocked ? 'table-cell' : 'none'}">
+                            <button class="btn-del" onclick="remove('${item.id}')">✕</button>
+                        </td>
                     `;
                     tbody.appendChild(row);
                 });
             }
-            applyFilter();
-        });
-    }
-
-    function setFilter(val, btn) {
-        currentFilter = val;
-        document.querySelectorAll('.filter-item').forEach(i => i.classList.remove('active'));
-        btn.classList.add('active');
-        applyFilter();
-    }
-
-    function applyFilter() {
-        document.querySelectorAll('#tbody tr').forEach(r => {
-            r.style.display = (currentFilter === 'all' || r.getAttribute('data-floor') === currentFilter) ? '' : 'none';
         });
     }
 
@@ -181,23 +228,21 @@
         const dev = document.getElementById('dev').value;
         const model = document.getElementById('model').value;
         const sn = document.getElementById('sn').value;
-        if(!dev) return alert("Vui lòng nhập tên máy!");
+        if(!dev || !isUnlocked) return alert("Vui lòng mở khóa trước khi thêm!");
         db.child(currentDept).push({ floor, dev, model, sn });
         document.getElementById('dev').value = ""; document.getElementById('model').value = ""; document.getElementById('sn').value = "";
     }
 
-    function update(id, field, val) { db.child(currentDept).child(id).update({ [field]: val }); }
-    function remove(id) { if(confirm("Xóa máy này?")) db.child(currentDept).child(id).remove(); }
+    function update(id, field, val) { if(isUnlocked) db.child(currentDept).child(id).update({ [field]: val }); }
+    function remove(id) { if(isUnlocked && confirm("Xác nhận xóa?")) db.child(currentDept).child(id).remove(); }
 
     function exportData() {
-        const table = document.getElementById("upsTable");
-        const rows = Array.from(table.rows).filter(r => r.style.display !== 'none');
+        const rows = Array.from(document.getElementById("upsTable").rows).filter(r => r.style.display !== 'none');
         const ws_data = rows.map(r => Array.from(r.cells).slice(0, 4).map(c => c.innerText));
         const wb = XLSX.utils.book_new();
         const ws = XLSX.utils.aoa_to_sheet(ws_data);
-        XLSX.utils.book_append_sheet(wb, ws, "Dữ liệu");
-        const fileName = currentFilter === 'all' ? `UPS_TatCa_${currentDept}.xlsx` : `UPS_${currentFilter}_${currentDept}.xlsx`;
-        XLSX.writeFile(wb, fileName);
+        XLSX.utils.book_append_sheet(wb, ws, "Data");
+        XLSX.writeFile(wb, `UPS_${currentDept}.xlsx`);
     }
 
     load();
